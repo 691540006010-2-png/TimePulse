@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TimePulse</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <div>
+        <b>⏱️ TimePulse</b>
+        <small>ระบบบันทึกเวลาและการทำงานประจำวัน</small>
+    </div>
+
+    <div>
+        <span id="currentDateDisplay">--</span>
+        <span>🔥 วันนี้ <b id="headerTodayHours">0.0</b> ชม.</span>
+    </div>
+</header>
+
+
+<main>
+
+<section class="grid">
+
+<!-- TIMER -->
+<div class="card">
+
+    <div class="mode">
+        <button id="modeStopwatchBtn"
+                onclick="switchTimerMode('stopwatch')">
+            ⏱️ จับเวลาสะสม
+        </button>
+
+        <button id="modeCountdownBtn"
+                onclick="switchTimerMode('countdown')">
+            ⌛ ตั้งเวลาถอยหลัง
+        </button>
+
+        <span id="timerStatusBadge">พร้อมใช้งาน</span>
+    </div>
+
+
+    <div class="row">
+        <div>
+            <label>ชื่องาน</label>
+            <input id="taskNameInput"
+                   placeholder="เช่น อ่านหนังสือ, ทำโปรเจกต์">
+        </div>
+
+        <div>
+            <label>หมวดหมู่</label>
+            <select id="taskCategorySelect">
+                <option>💻 งานทั่วไป</option>
+                <option>📚 การเรียน</option>
+                <option>🎨 โปรเจกต์</option>
+                <option>🏃 สุขภาพ</option>
+                <option>🧘 พักผ่อน</option>
+                <option>⚙️ อื่นๆ</option>
+            </select>
+        </div>
+    </div>
+
+
+    <div id="countdownPresetsArea" class="countdown hidden">
+
+        <div class="presets">
+            <button onclick="setCountdownPreset(15)">15 นาที</button>
+            <button onclick="setCountdownPreset(25)">25 นาที</button>
+            <button onclick="setCountdownPreset(45)">45 นาที</button>
+            <button onclick="setCountdownPreset(60)">60 นาที</button>
+        </div>
+
+        <div>
+            <input id="customHours" type="number" min="0" value="0">
+            ชม.
+            <input id="customMinutes" type="number" min="0" max="59" value="25">
+            นาที
+            <input id="customSeconds" type="number" min="0" max="59" value="0">
+            วิ
+            <button onclick="applyCustomCountdown()">ตกลง</button>
+        </div>
+
+    </div>
+
+
+    <div class="timer">
+        <div id="timerDisplay">00:00:00</div>
+
+        <div id="progressBarContainer" class="progress hidden">
+            <div id="timerProgressBar"></div>
+        </div>
+
+        <small id="timerSubtext">
+            กดเริ่มเพื่อเริ่มบันทึกเวลา
+        </small>
+    </div>
+
+
+    <div class="actions">
+        <button id="startPauseBtn" onclick="toggleTimer()">▶️ <span id="startPauseText">เริ่มจับเวลา</span></button>
+        <button onclick="resetTimer()">🔄 รีเซ็ต</button>
+        <button onclick="completeAndSaveSession()">✅ บันทึก</button>
+    </div>
+
+</div>
+
+
+<!-- MANUAL -->
+<div class="card">
+
+    <h2>📝 บันทึกเวลาย้อนหลัง</h2>
+
+    <form onsubmit="handleManualLogSubmit(event)">
+
+        <label>ชื่องาน / กิจกรรม</label>
+        <input id="manualTaskName" required>
+
+        <div class="row">
+            <div>
+                <label>หมวดหมู่</label>
+                <select id="manualCategory">
+                    <option>💻 งานทั่วไป</option>
+                    <option>📚 การเรียน</option>
+                    <option>🎨 โปรเจกต์</option>
+                    <option>🏃 สุขภาพ</option>
+                    <option>🧘 พักผ่อน</option>
+                    <option>⚙️ อื่นๆ</option>
+                </select>
+            </div>
+
+            <div>
+                <label>วันที่</label>
+                <input id="manualDate" type="date" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>ชั่วโมง</label>
+                <input id="manualHours" type="number" min="0" value="0">
+            </div>
+
+            <div>
+                <label>นาที</label>
+                <input id="manualMinutes" type="number" min="0" max="59" value="30">
+            </div>
+        </div>
+
+        <label>หมายเหตุ</label>
+        <input id="manualNotes">
+
+        <button class="full">➕ บันทึกย้อนหลัง</button>
+    </form>
+</div>
+
+</section>
+
+
+<!-- STATS -->
+<section class="stats">
+
+<div class="card">
+    <small>วันนี้</small>
+    <h3 id="statTodayHours">0.0 ชม.</h3>
+</div>
+
+<div class="card">
+    <small>สัปดาห์นี้</small>
+    <h3 id="statWeeklyHours">0.0 ชม.</h3>
+    <small>เฉลี่ย <span id="statDailyAverage">0.0</span> ชม./วัน</small>
+</div>
+
+<div class="card">
+    <small>จำนวนกิจกรรม</small>
+    <h3 id="statTotalCount">0 รายการ</h3>
+</div>
+
+<div class="card">
+    <small>หมวดหมู่สูงสุด</small>
+    <h3 id="statTopCategory">-</h3>
+    <small id="statTopCategorySub">ไม่มีข้อมูล</small>
+</div>
+
+</section>
+
+
+<!-- CHARTS -->
+<section class="grid">
+
+<div class="card">
+    <h2>📊 สัดส่วนตามหมวดหมู่</h2>
+    <div class="chart">
+        <canvas id="categoryChart"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📈 เวลาทำงาน 7 วันล่าสุด</h2>
+    <div class="chart">
+        <canvas id="weeklyBarChart"></canvas>
+    </div>
+</div>
+
+</section>
+
+
+<!-- HISTORY -->
+<section class="card">
+
+<div class="toolbar">
+    <div>
+        <h2>📋 ประวัติการบันทึกเวลา</h2>
+        <small>ค้นหา กรอง ลบ และส่งออกข้อมูล</small>
+    </div>
+
+    <div class="tools">
+        <input id="searchInput"
+               oninput="renderTable()"
+               placeholder="ค้นหา...">
+
+        <select id="filterCategory"
+                onchange="renderTable()">
+            <option value="ALL">ทุกหมวดหมู่</option>
+            <option>💻 งานทั่วไป</option>
+            <option>📚 การเรียน</option>
+            <option>🎨 โปรเจกต์</option>
+            <option>🏃 สุขภาพ</option>
+            <option>🧘 พักผ่อน</option>
+            <option>⚙️ อื่นๆ</option>
+        </select>
+
+        <button onclick="exportToCSV()">📥 CSV</button>
+        <button onclick="promptClearAllData()">🗑️ ล้างทั้งหมด</button>
+    </div>
+</div>
+
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th>วันที่</th>
+    <th>งาน</th>
+    <th>หมวดหมู่</th>
+    <th>โหมด</th>
+    <th>เวลา</th>
+    <th>จัดการ</th>
+</tr>
+</thead>
+
+<tbody id="logsTableBody"></tbody>
+</table>
+</div>
+
+<div id="emptyState" class="empty hidden">
+    📂<br>
+    ยังไม่มีข้อมูล
+</div>
+
+</section>
+
+</main>
+
+
+<!-- MODAL -->
+<div id="confirmModal" class="modal hidden">
+    <div class="modal-box">
+        <h3 id="modalTitle">ยืนยันการลบ</h3>
+        <p id="modalMessage"></p>
+
+        <div class="actions">
+            <button onclick="closeModal()">ยกเลิก</button>
+            <button id="modalConfirmBtn">ยืนยัน</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="toastContainer" class="toast"></div>
+
+
+<script src="dashboard.js"></script>
+<script src="timer.js"></script>
+
+</body>
+</html>
